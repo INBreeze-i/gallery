@@ -148,7 +148,7 @@ $recent_activities = $activities_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </a>
             
-            <a href="albums_list.php" class="bg-green-600 text-white p-6 rounded-xl hover:bg-green-700 transition-colors transform hover:scale-105">
+            <a href="album_manage.php" class="bg-green-600 text-white p-6 rounded-xl hover:bg-green-700 transition-colors transform hover:scale-105">
                 <div class="flex items-center">
                     <i class="fas fa-list text-3xl mr-4"></i>
                     <div>
@@ -286,7 +286,7 @@ $recent_activities = $activities_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 
                 <div class="mt-4 text-center">
-                    <a href="albums_list.php" class="text-blue-600 hover:text-blue-800 font-medium">
+                    <a href="album_manage.php" class="text-blue-600 hover:text-blue-800 font-medium">
                         ดู Albums ทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>
