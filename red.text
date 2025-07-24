@@ -1,0 +1,6 @@
+อยากทำโปรเจค PHP ตามนี้
+1. Css UI ที่สววยงาม
+2. มี Navbar ที่เชื่อมไป 6 หน้า
+3. มี Banner ใต้ Navbar
+4. ใต้ Baner มี Card 6 Card แต่ละ Card มี รูปในนั้น 4 รูป และ Card Header มีชื่อหัวข้อ
+5. รูปใน Card ดึงมาจาก MySql

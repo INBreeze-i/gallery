@@ -1,0 +1,72 @@
+
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 055757110
+      MYSQL_DATABASE: photo_db
+      MYSQL_USER: bris
+      MYSQL_PASSWORD: bris055757
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - app_network
+
+  # PHP Apache Web Server
+  php-apache:
+    image: php:8.1-apache
+    container_name: php_apache
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/var/www/html
+      
+    depends_on:
+      - mysql
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+      - PHP_EXTENSION_GD=1
+    networks:
+      - app_network
+    # Install PHP extensions for MySQL
+    command: >
+      bash -c "docker-php-ext-install mysqli pdo pdo_mysql
+      && apache2-foreground
+        apt-get update &&
+        apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev &&
+        docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp &&
+        docker-php-ext-install -j\$$(nproc) gd &&
+        apache2-foreground
+      "
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: bris
+      PMA_PASSWORD: bris055757
+      MYSQL_ROOT_PASSWORD: 055757110
+    depends_on:
+      - mysql
+    networks:
+      - app_network
+
+volumes:
+  mysql_data:
+
+networks:
+  app_network:
+    driver: bridge
