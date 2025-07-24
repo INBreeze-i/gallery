@@ -363,8 +363,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <div id="previewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
                         </div>
                         
+                        <!-- Upload Progress Bar -->
+                        <div id="uploadProgress" class="hidden">
+                            <div class="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold text-gray-800">
+                                        <i class="fas fa-upload mr-2 text-purple-600"></i>กำลังอัปโหลด...
+                                    </h3>
+                                    <div id="uploadPercentage" class="text-sm font-bold text-purple-600">0%</div>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="w-full bg-gray-200 rounded-full h-3 mb-3">
+                                    <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                                </div>
+                                
+                                <!-- Upload Status -->
+                                <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
+                                    <div id="uploadStatus">เตรียมอัปโหลด...</div>
+                                    <div id="uploadCount">0 / 0 ไฟล์</div>
+                                </div>
+                                
+                                <!-- Upload Speed and ETA -->
+                                <div class="flex justify-between items-center text-xs text-gray-500 mb-2">
+                                    <div id="uploadSpeed" class="hidden">ความเร็ว: <span class="font-medium">- KB/s</span></div>
+                                    <div id="uploadETA" class="hidden">เหลือเวลา: <span class="font-medium">-</span></div>
+                                </div>
+                                
+                                <!-- Current File Info -->
+                                <div id="currentFileInfo" class="mt-2 text-sm text-gray-500 hidden">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-image mr-2"></i>
+                                        <span id="currentFileName">-</span>
+                                        <span id="currentFileSize" class="ml-2 text-xs">(-)</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cancel Button -->
+                                <div class="mt-3 text-center">
+                                    <button type="button" id="cancelUpload" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm">
+                                        <i class="fas fa-times mr-2"></i>ยกเลิกการอัปโหลด
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div>
-                            <button type="submit" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                            <button type="submit" id="uploadButton" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
                                 <i class="fas fa-upload mr-2"></i>อัปโหลดรูปภาพ
                             </button>
                         </div>
@@ -657,6 +702,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
 
+        let uploadXHR = null; // Global variable to store XMLHttpRequest for cancellation
+        let uploadStartTime = 0;
+        let lastLoaded = 0;
+        let lastTime = 0;
+
         function previewNewImages(input) {
             const preview = document.getElementById('newImagesPreview');
             const grid = document.getElementById('previewGrid');
@@ -684,6 +734,207 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 preview.classList.add('hidden');
             }
         }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 60) return Math.round(seconds) + ' วินาที';
+            if (seconds < 3600) return Math.round(seconds / 60) + ' นาที';
+            return Math.round(seconds / 3600) + ' ชั่วโมง';
+        }
+
+        function updateProgressBar(percentage, currentFile, currentIndex, totalFiles, fileSize, loaded, total) {
+            const progressBar = document.getElementById('progressBar');
+            const percentage_el = document.getElementById('uploadPercentage');
+            const status_el = document.getElementById('uploadStatus');
+            const count_el = document.getElementById('uploadCount');
+            const fileInfo_el = document.getElementById('currentFileInfo');
+            const fileName_el = document.getElementById('currentFileName');
+            const fileSize_el = document.getElementById('currentFileSize');
+            const speed_el = document.getElementById('uploadSpeed');
+            const eta_el = document.getElementById('uploadETA');
+
+            // Update progress bar
+            progressBar.style.width = percentage + '%';
+            percentage_el.textContent = Math.round(percentage) + '%';
+            
+            // Update file count
+            count_el.textContent = `${currentIndex} / ${totalFiles} ไฟล์`;
+            
+            // Calculate speed and ETA
+            const currentTime = Date.now();
+            if (loaded && total && uploadStartTime > 0) {
+                const elapsedTime = (currentTime - uploadStartTime) / 1000; // seconds
+                const bytesPerSecond = loaded / elapsedTime;
+                const remainingBytes = total - loaded;
+                const eta = remainingBytes / bytesPerSecond;
+                
+                // Update speed display
+                if (bytesPerSecond > 0) {
+                    speed_el.classList.remove('hidden');
+                    const speedText = bytesPerSecond > 1024 * 1024 ? 
+                        (bytesPerSecond / (1024 * 1024)).toFixed(1) + ' MB/s' :
+                        (bytesPerSecond / 1024).toFixed(1) + ' KB/s';
+                    speed_el.innerHTML = `ความเร็ว: <span class="font-medium">${speedText}</span>`;
+                }
+                
+                // Update ETA display
+                if (eta > 0 && eta < 3600 && percentage < 100) {
+                    eta_el.classList.remove('hidden');
+                    eta_el.innerHTML = `เหลือเวลา: <span class="font-medium">${formatTime(eta)}</span>`;
+                } else if (percentage >= 100) {
+                    eta_el.innerHTML = `เหลือเวลา: <span class="font-medium text-green-600">เสร็จแล้ว!</span>`;
+                }
+            }
+            
+            // Update current file info
+            if (currentFile) {
+                fileInfo_el.classList.remove('hidden');
+                fileName_el.textContent = currentFile;
+                fileSize_el.textContent = `(${formatFileSize(fileSize)})`;
+                
+                if (percentage < 100) {
+                    status_el.textContent = `กำลังอัปโหลด: ${currentFile}`;
+                } else {
+                    status_el.textContent = `เสร็จสิ้นการอัปโหลด`;
+                }
+            } else {
+                fileInfo_el.classList.add('hidden');
+                status_el.textContent = percentage < 100 ? 'กำลังประมวลผล...' : 'เสร็จสิ้นการอัปโหลด';
+            }
+        }
+
+        function showUploadProgress() {
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            document.getElementById('uploadButton').disabled = true;
+            document.getElementById('uploadButton').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังอัปโหลด...';
+            uploadStartTime = Date.now();
+        }
+
+        function hideUploadProgress() {
+            document.getElementById('uploadProgress').classList.add('hidden');
+            document.getElementById('uploadButton').disabled = false;
+            document.getElementById('uploadButton').innerHTML = '<i class="fas fa-upload mr-2"></i>อัปโหลดรูปภาพ';
+            
+            // Hide speed and ETA
+            document.getElementById('uploadSpeed').classList.add('hidden');
+            document.getElementById('uploadETA').classList.add('hidden');
+            
+            // Reset timing variables
+            uploadStartTime = 0;
+            lastLoaded = 0;
+            lastTime = 0;
+        }
+
+        function handleUploadComplete(success, message) {
+            hideUploadProgress();
+            
+            if (success) {
+                // Show success message and reload page
+                alert('อัปโหลดรูปภาพสำเร็จ!');
+                location.reload();
+            } else {
+                // Show error message
+                alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + message);
+            }
+        }
+
+        // Handle upload form submission with AJAX and progress
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.querySelector('form[method="POST"][enctype="multipart/form-data"]');
+            
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+                
+                const fileInput = document.querySelector('input[name="new_images[]"]');
+                
+                if (!fileInput.files.length) {
+                    alert('กรุณาเลือกไฟล์รูปภาพก่อนอัปโหลด');
+                    return;
+                }
+                
+                const totalFiles = fileInput.files.length;
+                const formData = new FormData();
+                
+                // Add album_id and CSRF token
+                formData.append('album_id', <?php echo $album_id; ?>);
+                formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                
+                // Add all files
+                Array.from(fileInput.files).forEach(file => {
+                    formData.append('new_images[]', file);
+                });
+                
+                showUploadProgress();
+                updateProgressBar(0, null, 0, totalFiles, 0, 0, 0);
+                
+                // Create XMLHttpRequest for progress tracking
+                uploadXHR = new XMLHttpRequest();
+                
+                // Track upload progress
+                uploadXHR.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentage = (e.loaded / e.total) * 100;
+                        const currentFileIndex = Math.min(Math.ceil((e.loaded / e.total) * totalFiles), totalFiles);
+                        const currentFile = fileInput.files[currentFileIndex - 1]?.name || '';
+                        const currentFileSize = fileInput.files[currentFileIndex - 1]?.size || 0;
+                        
+                        updateProgressBar(percentage, currentFile, currentFileIndex, totalFiles, currentFileSize, e.loaded, e.total);
+                    }
+                });
+                
+                // Handle upload completion
+                uploadXHR.addEventListener('load', function() {
+                    if (uploadXHR.status === 200) {
+                        try {
+                            const response = JSON.parse(uploadXHR.responseText);
+                            
+                            if (response.success) {
+                                updateProgressBar(100, null, totalFiles, totalFiles, 0, 0, 0);
+                                setTimeout(() => {
+                                    handleUploadComplete(true, response.message);
+                                }, 500);
+                            } else {
+                                handleUploadComplete(false, response.message);
+                            }
+                        } catch (error) {
+                            handleUploadComplete(false, 'Error processing server response');
+                        }
+                    } else {
+                        handleUploadComplete(false, `Server error: ${uploadXHR.status}`);
+                    }
+                });
+                
+                // Handle upload errors
+                uploadXHR.addEventListener('error', function() {
+                    handleUploadComplete(false, 'Network error occurred');
+                });
+                
+                // Handle upload abort
+                uploadXHR.addEventListener('abort', function() {
+                    hideUploadProgress();
+                    alert('การอัปโหลดถูกยกเลิก');
+                });
+                
+                // Send the request to AJAX endpoint
+                uploadXHR.open('POST', 'ajax/image_upload.php');
+                uploadXHR.send(formData);
+            });
+            
+            // Handle cancel upload button
+            document.getElementById('cancelUpload').addEventListener('click', function() {
+                if (uploadXHR) {
+                    uploadXHR.abort();
+                    uploadXHR = null;
+                }
+            });
+        });
 
         // Close modal when clicking outside
         document.getElementById('editImageModal').addEventListener('click', function(e) {
