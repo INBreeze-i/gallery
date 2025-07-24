@@ -7,10 +7,10 @@ services:
     container_name: mysql_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 055757110
-      MYSQL_DATABASE: photo_db
-      MYSQL_USER: bris
-      MYSQL_PASSWORD: bris055757
+      MYSQL_ROOT_PASSWORD: -
+      MYSQL_DATABASE: -
+      MYSQL_USER: -
+      MYSQL_PASSWORD: -
     ports:
       - "3307:3306"
     volumes:
@@ -56,9 +56,9 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: bris
-      PMA_PASSWORD: bris055757
-      MYSQL_ROOT_PASSWORD: 055757110
+      PMA_USER: -
+      PMA_PASSWORD: -
+      MYSQL_ROOT_PASSWORD: -
     depends_on:
       - mysql
     networks:
