@@ -368,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             </button>
                             
                             <div class="mt-4 text-sm text-gray-500">
-                                <p>รองรับ: JPEG, PNG, GIF, WebP | ขนาดสูงสุด: 5MB ต่อไฟล์</p>
+                                <p>รองรับ: JPEG, PNG, GIF, WebP | แปลงเป็น WebP อัตโนมัติเพื่อประหยัดพื้นที่</p>
                                 <p>สามารถเลือกได้หลายไฟล์พร้อมกัน (กด Ctrl/Cmd + คลิก)</p>
                             </div>
                         </div>
@@ -423,7 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
                             <ul class="space-y-2">
                                 <li><i class="fas fa-check mr-2 text-green-600"></i>รองรับไฟล์: JPEG, PNG, GIF, WebP</li>
-                                <li><i class="fas fa-check mr-2 text-green-600"></i>ขนาดไฟล์สูงสุด: 5MB ต่อไฟล์</li>
+                                <li><i class="fas fa-check mr-2 text-green-600"></i>แปลงเป็น WebP อัตโนมัติ (ประหยัดพื้นที่)</li>
                                 <li><i class="fas fa-check mr-2 text-green-600"></i>สามารถอัปโหลดได้หลายไฟล์พร้อมกัน</li>
                             </ul>
                             <ul class="space-y-2">
@@ -506,8 +506,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             files.forEach(file => {
                 if (!file.type.startsWith('image/')) {
                     errors.push(`${file.name}: ไม่ใช่ไฟล์รูปภาพ`);
-                } else if (file.size > 5 * 1024 * 1024) {
-                    errors.push(`${file.name}: ไฟล์ใหญ่เกิน 5MB`);
                 } else {
                     validFiles.push(file);
                 }
@@ -649,13 +647,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 5MB');
-                    input.value = '';
-                    preview.classList.add('hidden');
-                    return;
-                }
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {

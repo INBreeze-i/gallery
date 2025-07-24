@@ -4,16 +4,22 @@ class ImageHandler {
     private $max_width;
     private $max_height;
     private $quality;
+    private $webp_quality;
     private $has_gd;
+    private $has_webp;
     
-    public function __construct($upload_dir = '../uploads/albums/', $max_width = 800, $max_height = 600, $quality = 80) {
+    public function __construct($upload_dir = '../uploads/albums/', $max_width = 800, $max_height = 600, $quality = 80, $webp_quality = 85) {
         $this->upload_dir = $upload_dir;
         $this->max_width = $max_width;
         $this->max_height = $max_height;
         $this->quality = $quality;
+        $this->webp_quality = $webp_quality;
         
         // ตรวจสอบว่ามี GD extension หรือไม่
         $this->has_gd = extension_loaded('gd');
+        
+        // ตรวจสอบการรองรับ WebP
+        $this->has_webp = $this->has_gd && function_exists('imagewebp') && function_exists('imagecreatefromwebp');
         
         // สร้างโฟลเดอร์ถ้ายังไม่มี
         if (!file_exists($this->upload_dir)) {
@@ -23,20 +29,25 @@ class ImageHandler {
     
     // สร้างชื่อไฟล์ที่ไม่ซ้ำ
     public function generateUniqueFilename($original_name) {
-        $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+        $original_extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
         $timestamp = date('YmdHis');
         $random = substr(md5(uniqid(rand(), true)), 0, 8);
-        return "img_{$timestamp}_{$random}.{$extension}";
+        
+        // ใช้ .webp ถ้ารองรับ WebP และไฟล์เป็นรูปภาพที่แปลงได้
+        $supported_for_webp = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if ($this->has_webp && in_array($original_extension, $supported_for_webp)) {
+            return "img_{$timestamp}_{$random}.webp";
+        }
+        
+        // ถ้าไม่รองรับ WebP หรือไฟล์ไม่สามารถแปลงได้ ใช้นามสกุลเดิม
+        return "img_{$timestamp}_{$random}.{$original_extension}";
     }
     
     // ตรวจสอบไฟล์รูปภาพ
     public function validateImage($file) {
         $errors = [];
         
-        // ตรวจสอบขนาดไฟล์ (5MB)
-        if ($file['size'] > 5 * 1024 * 1024) {
-            $errors[] = "ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB (ขนาดปัจจุบัน: " . $this->formatFileSize($file['size']) . ")";
-        }
+        // เอาข้อจำกัดขนาดไฟล์ออก - รองรับไฟล์ขนาดใหญ่และแปลงเป็น WebP อัตโนมัติ
         
         // ตรวจสอบประเภทไฟล์
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -62,7 +73,73 @@ class ImageHandler {
         return $errors;
     }
     
-    // ปรับขนาดรูปภาพ (ใช้ GD ถ้ามี)
+    // แปลงรูปภาพเป็น WebP
+    public function convertToWebP($source_path, $destination_path, $source_mime_type = null) {
+        // ถ้าไม่รองรับ WebP ให้คัดลอกไฟล์เดิม
+        if (!$this->has_webp) {
+            return copy($source_path, $destination_path);
+        }
+        
+        try {
+            // ตรวจสอบประเภทไฟล์ถ้าไม่ได้ระบุ
+            if (!$source_mime_type) {
+                $image_info = @getimagesize($source_path);
+                if (!$image_info) {
+                    return copy($source_path, $destination_path);
+                }
+                $source_mime_type = $image_info['mime'];
+            }
+            
+            // สร้าง image resource ตามประเภทไฟล์
+            $source_image = null;
+            switch ($source_mime_type) {
+                case 'image/jpeg':
+                    if (function_exists('imagecreatefromjpeg')) {
+                        $source_image = @imagecreatefromjpeg($source_path);
+                    }
+                    break;
+                case 'image/png':
+                    if (function_exists('imagecreatefrompng')) {
+                        $source_image = @imagecreatefrompng($source_path);
+                    }
+                    break;
+                case 'image/gif':
+                    if (function_exists('imagecreatefromgif')) {
+                        $source_image = @imagecreatefromgif($source_path);
+                    }
+                    break;
+                case 'image/webp':
+                    if (function_exists('imagecreatefromwebp')) {
+                        $source_image = @imagecreatefromwebp($source_path);
+                    }
+                    break;
+            }
+            
+            // ถ้าไม่สามารถสร้าง image resource ได้ ให้คัดลอกไฟล์เดิม
+            if (!$source_image) {
+                return copy($source_path, $destination_path);
+            }
+            
+            // บันทึกเป็น WebP
+            $result = @imagewebp($source_image, $destination_path, $this->webp_quality);
+            
+            // ล้าง memory
+            imagedestroy($source_image);
+            
+            // ถ้าบันทึกไม่สำเร็จ ให้คัดลอกไฟล์เดิม
+            if (!$result) {
+                return copy($source_path, $destination_path);
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("WebP conversion error: " . $e->getMessage());
+            return copy($source_path, $destination_path);
+        }
+    }
+    
+    // ปรับขนาดรูปภาพและแปลงเป็น WebP (ถ้ารองรับ)
     public function resizeImage($source_path, $destination_path, $max_width = null, $max_height = null) {
         $max_width = $max_width ?: $this->max_width;
         $max_height = $max_height ?: $this->max_height;
@@ -86,9 +163,13 @@ class ImageHandler {
             // คำนวณขนาดใหม่โดยรักษาอัตราส่วน
             $ratio = min($max_width / $original_width, $max_height / $original_height);
             
-            // ถ้ารูปเล็กกว่าขนาดที่กำหนด ไม่ต้องปรับขนาด
+            // ถ้ารูปเล็กกว่าขนาดที่กำหนด ไม่ต้องปรับขนาด แต่ยังแปลงเป็น WebP ได้
             if ($ratio >= 1) {
-                return copy($source_path, $destination_path);
+                if ($this->has_webp && pathinfo($destination_path, PATHINFO_EXTENSION) === 'webp') {
+                    return $this->convertToWebP($source_path, $destination_path, $mime_type);
+                } else {
+                    return copy($source_path, $destination_path);
+                }
             }
             
             $new_width = round($original_width * $ratio);
@@ -132,7 +213,7 @@ class ImageHandler {
             }
             
             // รักษาความโปร่งใสสำหรับ PNG และ GIF
-            if ($mime_type == 'image/png' || $mime_type == 'image/gif') {
+            if ($mime_type == 'image/png' || $mime_type == 'image/gif' || $mime_type == 'image/webp') {
                 imagealphablending($new_image, false);
                 imagesavealpha($new_image, true);
             }
@@ -146,30 +227,38 @@ class ImageHandler {
                 return copy($source_path, $destination_path);
             }
             
-            // บันทึกไฟล์ใหม่
+            // บันทึกไฟล์ใหม่ - ใช้ WebP ถ้ารองรับและชื่อไฟล์เป็น .webp
             $result = false;
-            switch ($mime_type) {
-                case 'image/jpeg':
-                    if (function_exists('imagejpeg')) {
-                        $result = @imagejpeg($new_image, $destination_path, $this->quality);
-                    }
-                    break;
-                case 'image/png':
-                    if (function_exists('imagepng')) {
-                        $compression = 9 - round($this->quality / 10);
-                        $result = @imagepng($new_image, $destination_path, $compression);
-                    }
-                    break;
-                case 'image/gif':
-                    if (function_exists('imagegif')) {
-                        $result = @imagegif($new_image, $destination_path);
-                    }
-                    break;
-                case 'image/webp':
-                    if (function_exists('imagewebp')) {
-                        $result = @imagewebp($new_image, $destination_path, $this->quality);
-                    }
-                    break;
+            $destination_extension = strtolower(pathinfo($destination_path, PATHINFO_EXTENSION));
+            
+            if ($this->has_webp && $destination_extension === 'webp') {
+                // บันทึกเป็น WebP
+                $result = @imagewebp($new_image, $destination_path, $this->webp_quality);
+            } else {
+                // บันทึกตามประเภทเดิม
+                switch ($mime_type) {
+                    case 'image/jpeg':
+                        if (function_exists('imagejpeg')) {
+                            $result = @imagejpeg($new_image, $destination_path, $this->quality);
+                        }
+                        break;
+                    case 'image/png':
+                        if (function_exists('imagepng')) {
+                            $compression = 9 - round($this->quality / 10);
+                            $result = @imagepng($new_image, $destination_path, $compression);
+                        }
+                        break;
+                    case 'image/gif':
+                        if (function_exists('imagegif')) {
+                            $result = @imagegif($new_image, $destination_path);
+                        }
+                        break;
+                    case 'image/webp':
+                        if (function_exists('imagewebp')) {
+                            $result = @imagewebp($new_image, $destination_path, $this->quality);
+                        }
+                        break;
+                }
             }
             
             // ล้าง memory
@@ -289,7 +378,10 @@ class ImageHandler {
     public function getSystemInfo() {
         return [
             'gd_available' => $this->has_gd,
+            'webp_available' => $this->has_webp,
             'gd_version' => $this->has_gd ? gd_info()['GD Version'] ?? 'Unknown' : 'Not available',
+            'webp_quality' => $this->webp_quality,
+            'auto_webp_conversion' => $this->has_webp,
             'upload_max_filesize' => ini_get('upload_max_filesize'),
             'post_max_size' => ini_get('post_max_size'),
             'max_file_uploads' => ini_get('max_file_uploads'),
@@ -307,9 +399,14 @@ class ImageHandler {
             if (function_exists('imagecreatefromjpeg')) $formats[] = 'JPEG';
             if (function_exists('imagecreatefrompng')) $formats[] = 'PNG';
             if (function_exists('imagecreatefromgif')) $formats[] = 'GIF';
-            if (function_exists('imagecreatefromwebp')) $formats[] = 'WebP';
+            if (function_exists('imagecreatefromwebp')) $formats[] = 'WebP (Input)';
+            if (function_exists('imagewebp')) $formats[] = 'WebP (Output)';
+            
+            if ($this->has_webp) {
+                $formats[] = 'Auto WebP Conversion (85% quality)';
+            }
         } else {
-            $formats[] = 'Basic file copy (no resizing)';
+            $formats[] = 'Basic file copy (no resizing/conversion)';
         }
         
         return $formats;
