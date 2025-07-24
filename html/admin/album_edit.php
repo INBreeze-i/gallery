@@ -3,6 +3,7 @@ include_once '../config/database.php';
 include_once '../models/Album.php';
 include_once 'Auth.php';
 include_once 'ImageHandler.php';
+include_once 'CSRFProtection.php';
 
 $database = new Database();
 $db = $database->getConnection();
@@ -60,7 +61,11 @@ $errors = [];
 
 // จัดการการส่งข้อมูล
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['action'])) {
+    // ตรวจสอบ CSRF token
+    if (!isset($_POST['csrf_token']) || !CSRFProtection::validateToken($_POST['csrf_token'], $_POST['action'] ?? 'default')) {
+        $errors[] = "การยืนยันความปลอดภัยล้มเหลว กรุณารีเฟรชหน้าและลองใหม่";
+    } else {
+        if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'update_album':
                 $title = trim($_POST['title']);
@@ -158,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 break;
         }
+    }
     }
 }
 ?>
@@ -270,6 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     <form method="POST" class="space-y-6">
                         <input type="hidden" name="action" value="update_album">
+                        <?php echo CSRFProtection::getTokenField('update_album'); ?>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
@@ -339,6 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     <form method="POST" enctype="multipart/form-data" class="space-y-6">
                         <input type="hidden" name="action" value="upload_images">
+                        <?php echo CSRFProtection::getTokenField('upload_images'); ?>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">

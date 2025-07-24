@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 include_once '../../config/database.php';
 include_once '../Auth.php';
 include_once '../ImageHandler.php';
+include_once '../CSRFProtection.php';
 
 try {
     $database = new Database();
