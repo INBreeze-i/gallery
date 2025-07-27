@@ -99,5 +99,76 @@ class Album {
         $stmt->execute();
         return $stmt;
     }
+
+    // ค้นหา Albums ตามชื่อและวันที่
+    public function searchAlbums($search_name = '', $search_date = '') {
+        $query = "SELECT 
+                    a.id as album_id,
+                    a.title as album_title,
+                    a.description as album_description,
+                    a.cover_image,
+                    a.date_created,
+                    a.view_count,
+                    c.id as category_id,
+                    c.name as category_name,
+                    c.description as category_description,
+                    c.icon,
+                    c.color,
+                    (SELECT COUNT(*) FROM album_images WHERE album_id = a.id) as image_count
+                  FROM albums a
+                  JOIN album_categories c ON a.category_id = c.id
+                  WHERE a.status = 'active'";
+        
+        $params = [];
+        
+        // เพิ่มเงื่อนไขการค้นหาตามชื่อ
+        if (!empty($search_name)) {
+            $query .= " AND (a.title LIKE ? OR a.description LIKE ?)";
+            $search_term = "%{$search_name}%";
+            $params[] = $search_term;
+            $params[] = $search_term;
+        }
+        
+        // เพิ่มเงื่อนไขการค้นหาตามวันที่
+        if (!empty($search_date)) {
+            $query .= " AND a.date_created = ?";
+            $params[] = $search_date;
+        }
+        
+        $query .= " ORDER BY a.date_created DESC, a.id DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+        return $stmt;
+    }
+
+    // นับจำนวนผลการค้นหา
+    public function countSearchResults($search_name = '', $search_date = '') {
+        $query = "SELECT COUNT(*) as total
+                  FROM albums a
+                  JOIN album_categories c ON a.category_id = c.id
+                  WHERE a.status = 'active'";
+        
+        $params = [];
+        
+        // เพิ่มเงื่อนไขการค้นหาตามชื่อ
+        if (!empty($search_name)) {
+            $query .= " AND (a.title LIKE ? OR a.description LIKE ?)";
+            $search_term = "%{$search_name}%";
+            $params[] = $search_term;
+            $params[] = $search_term;
+        }
+        
+        // เพิ่มเงื่อนไขการค้นหาตามวันที่
+        if (!empty($search_date)) {
+            $query .= " AND a.date_created = ?";
+            $params[] = $search_date;
+        }
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
 }
 ?>
