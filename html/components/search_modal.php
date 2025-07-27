@@ -1,3 +1,15 @@
+<?php
+// Fetch album categories for the dropdown
+include_once __DIR__ . '/../config/database.php';
+$database = new Database();
+$db = $database->getConnection();
+
+$category_query = "SELECT id, name, icon, color FROM album_categories ORDER BY name";
+$category_stmt = $db->prepare($category_query);
+$category_stmt->execute();
+$categories = $category_stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+
 <!-- Search Modal -->
 <div id="searchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-96 overflow-y-auto">
@@ -39,7 +51,7 @@
             </div>
             
             <!-- ช่องเลือกวันที่สิ้นสุด -->
-            <div class="mb-6">
+            <div class="mb-4">
                 <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-calendar-alt mr-1"></i>วันที่สิ้นสุด
                 </label>
@@ -47,6 +59,23 @@
                        id="endDate" 
                        name="end_date"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            
+            <!-- ช่องเลือกหมวดหมู่ -->
+            <div class="mb-6">
+                <label for="categorySelect" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-tags mr-1"></i>หมวดหมู่ Album
+                </label>
+                <select id="categorySelect" 
+                        name="category"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">ทุกหมวดหมู่</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?php echo htmlspecialchars($category['id']); ?>">
+                            <?php echo htmlspecialchars($category['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             
             <!-- ปุ่มควบคุม -->

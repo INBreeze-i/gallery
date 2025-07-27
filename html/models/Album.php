@@ -100,8 +100,17 @@ class Album {
         return $stmt;
     }
     
-    // ค้นหา Albums ด้วยชื่อและ/หรือช่วงวันที่
-    public function searchAlbums($query = '', $start_date = '', $end_date = '') {
+    // ดึงข้อมูลหมวดหมู่ตาม ID
+    public function getCategoryById($category_id) {
+        $query = "SELECT * FROM album_categories WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $category_id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    // ค้นหา Albums ด้วยชื่อและ/หรือช่วงวันที่และ/หรือหมวดหมู่
+    public function searchAlbums($query = '', $start_date = '', $end_date = '', $category_id = '') {
         $sql = "SELECT 
                     a.*,
                     c.name as category_name,
@@ -133,6 +142,13 @@ class Album {
         if (!empty($end_date)) {
             $sql .= " AND a.date_created <= ?";
             $params[] = $end_date;
+            $param_count++;
+        }
+        
+        // เพิ่มเงื่อนไขค้นหาตามหมวดหมู่
+        if (!empty($category_id)) {
+            $sql .= " AND a.category_id = ?";
+            $params[] = $category_id;
             $param_count++;
         }
         

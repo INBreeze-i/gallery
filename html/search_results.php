@@ -10,16 +10,23 @@ $album = new Album($db);
 $search_query = isset($_GET['query']) ? trim($_GET['query']) : '';
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+$category_id = isset($_GET['category']) ? $_GET['category'] : '';
 
 // ตรวจสอบว่ามีการค้นหาหรือไม่
-$has_search = !empty($search_query) || !empty($start_date) || !empty($end_date);
+$has_search = !empty($search_query) || !empty($start_date) || !empty($end_date) || !empty($category_id);
 
 $album_results = [];
 $total_results = 0;
+$selected_category = null;
+
+// ดึงข้อมูลหมวดหมู่ที่เลือกถ้ามี
+if (!empty($category_id)) {
+    $selected_category = $album->getCategoryById($category_id);
+}
 
 if ($has_search) {
     // ดำเนินการค้นหา
-    $search_stmt = $album->searchAlbums($search_query, $start_date, $end_date);
+    $search_stmt = $album->searchAlbums($search_query, $start_date, $end_date, $category_id);
     
     while ($row = $search_stmt->fetch(PDO::FETCH_ASSOC)) {
         // ดึงรูปภาพ 4 รูปแรกของแต่ละ album
@@ -86,7 +93,7 @@ if ($has_search) {
                         <?php endif; ?>
                         
                         <?php if (!empty($start_date) || !empty($end_date)): ?>
-                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full mr-2">
                                 <i class="fas fa-calendar-alt mr-1"></i>
                                 <?php 
                                 if (!empty($start_date) && !empty($end_date)) {
@@ -97,6 +104,12 @@ if ($has_search) {
                                     echo 'ถึง ' . date('d/m/Y', strtotime($end_date));
                                 }
                                 ?>
+                            </span>
+                        <?php endif; ?>
+                        
+                        <?php if ($selected_category): ?>
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                <i class="<?php echo htmlspecialchars($selected_category['icon']); ?> mr-1"></i><?php echo htmlspecialchars($selected_category['name']); ?>
                             </span>
                         <?php endif; ?>
                     </div>
