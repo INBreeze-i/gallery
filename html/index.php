@@ -62,6 +62,9 @@ while ($row = $albums->fetch(PDO::FETCH_ASSOC)) {
     <!-- Banner -->
     <?php include 'components/banner.php'; ?>
     
+    <!-- Search Modal -->
+    <?php include 'components/search_modal.php'; ?>
+    
     <!-- Albums Section -->
     <div class="container mx-auto px-4 py-8">
         <div class="text-center mb-8">
