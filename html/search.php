@@ -8,18 +8,25 @@ $album = new Album($db);
 
 // รับค่าจากฟอร์มค้นหา
 $search_name = isset($_GET['search']) ? trim($_GET['search']) : '';
-$search_date = isset($_GET['date']) ? trim($_GET['date']) : '';
+$date_from = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
+$date_to = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
+
+// รองรับพารามิเตอร์เก่า (date) สำหรับ backward compatibility
+if (empty($date_from) && empty($date_to) && isset($_GET['date']) && !empty(trim($_GET['date']))) {
+    $date_from = trim($_GET['date']);
+    $date_to = trim($_GET['date']);
+}
 
 // ตรวจสอบว่ามีการค้นหาหรือไม่
-$has_search = !empty($search_name) || !empty($search_date);
+$has_search = !empty($search_name) || !empty($date_from) || !empty($date_to);
 
 $search_results = [];
 $total_results = 0;
 
 if ($has_search) {
     // ทำการค้นหา
-    $search_stmt = $album->searchAlbums($search_name, $search_date);
-    $total_results = $album->countSearchResults($search_name, $search_date);
+    $search_stmt = $album->searchAlbums($search_name, $date_from, $date_to);
+    $total_results = $album->countSearchResults($search_name, $date_from, $date_to);
     
     while ($row = $search_stmt->fetch(PDO::FETCH_ASSOC)) {
         // ดึงรูปภาพตัวอย่าง 4 รูปแรก
@@ -88,9 +95,22 @@ if ($has_search) {
                                     <i class="fas fa-tag mr-1"></i>ชื่อ: "<?php echo htmlspecialchars($search_name); ?>"
                                 </span>
                             <?php endif; ?>
-                            <?php if (!empty($search_date)): ?>
+                            <?php if (!empty($date_from) || !empty($date_to)): ?>
                                 <span class="bg-white/20 px-3 py-1 rounded-full">
-                                    <i class="fas fa-calendar mr-1"></i>วันที่: <?php echo date('d/m/Y', strtotime($search_date)); ?>
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    <?php 
+                                    if (!empty($date_from) && !empty($date_to)) {
+                                        if ($date_from === $date_to) {
+                                            echo "วันที่: " . date('d/m/Y', strtotime($date_from));
+                                        } else {
+                                            echo "ช่วงวันที่: " . date('d/m/Y', strtotime($date_from)) . " - " . date('d/m/Y', strtotime($date_to));
+                                        }
+                                    } elseif (!empty($date_from)) {
+                                        echo "ตั้งแต่: " . date('d/m/Y', strtotime($date_from));
+                                    } elseif (!empty($date_to)) {
+                                        echo "จนถึง: " . date('d/m/Y', strtotime($date_to));
+                                    }
+                                    ?>
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -103,8 +123,8 @@ if ($has_search) {
     <!-- Search Form (ซ้ำจากหน้าแรก สำหรับค้นหาใหม่) -->
     <div class="bg-white shadow-sm border-b">
         <div class="container mx-auto px-4 py-6">
-            <form action="search.php" method="GET" class="max-w-4xl mx-auto">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <form action="search.php" method="GET" class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- ช่องค้นหาจากชื่อ -->
                     <div class="space-y-2">
                         <label for="search" class="block text-sm font-medium text-gray-700">ค้นหาจากชื่อ Album</label>
@@ -116,13 +136,29 @@ if ($has_search) {
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
                     </div>
                     
-                    <!-- ช่องค้นหาจากวันที่ -->
+                    <!-- ช่องวันที่เริ่มต้น -->
                     <div class="space-y-2">
-                        <label for="date" class="block text-sm font-medium text-gray-700">ค้นหาจากวันที่สร้าง</label>
+                        <label for="date_from" class="block text-sm font-medium text-gray-700">
+                            <i class="fas fa-calendar mr-1"></i>วันที่เริ่มต้น
+                        </label>
                         <input type="date" 
-                               id="date" 
-                               name="date" 
-                               value="<?php echo htmlspecialchars($search_date); ?>"
+                               id="date_from" 
+                               name="date_from" 
+                               value="<?php echo htmlspecialchars($date_from); ?>"
+                               placeholder="วันที่เริ่มต้น"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
+                    </div>
+                    
+                    <!-- ช่องวันที่สิ้นสุด -->
+                    <div class="space-y-2">
+                        <label for="date_to" class="block text-sm font-medium text-gray-700">
+                            <i class="fas fa-calendar mr-1"></i>วันที่สิ้นสุด
+                        </label>
+                        <input type="date" 
+                               id="date_to" 
+                               name="date_to" 
+                               value="<?php echo htmlspecialchars($date_to); ?>"
+                               placeholder="วันที่สิ้นสุด"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
                     </div>
                     
@@ -134,6 +170,14 @@ if ($has_search) {
                             <span>ค้นหา</span>
                         </button>
                     </div>
+                </div>
+                
+                <!-- หมายเหตุ -->
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        สามารถค้นหาด้วยชื่อ Album หรือช่วงวันที่ หรือทั้งคู่ / ใส่เฉพาะวันที่เริ่มต้นหรือสิ้นสุดก็ได้
+                    </p>
                 </div>
             </form>
         </div>

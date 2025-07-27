@@ -100,8 +100,8 @@ class Album {
         return $stmt;
     }
 
-    // ค้นหา Albums ตามชื่อและวันที่
-    public function searchAlbums($search_name = '', $search_date = '') {
+    // ค้นหา Albums ตามชื่อและช่วงวันที่
+    public function searchAlbums($search_name = '', $date_from = '', $date_to = '') {
         $query = "SELECT 
                     a.id as album_id,
                     a.title as album_title,
@@ -129,10 +129,20 @@ class Album {
             $params[] = $search_term;
         }
         
-        // เพิ่มเงื่อนไขการค้นหาตามวันที่
-        if (!empty($search_date)) {
-            $query .= " AND a.date_created = ?";
-            $params[] = $search_date;
+        // เพิ่มเงื่อนไขการค้นหาตามช่วงวันที่
+        if (!empty($date_from) && !empty($date_to)) {
+            // ค้นหาในช่วงวันที่
+            $query .= " AND a.date_created BETWEEN ? AND ?";
+            $params[] = $date_from;
+            $params[] = $date_to;
+        } elseif (!empty($date_from)) {
+            // ค้นหาตั้งแต่วันที่เริ่มต้นเป็นต้นไป
+            $query .= " AND a.date_created >= ?";
+            $params[] = $date_from;
+        } elseif (!empty($date_to)) {
+            // ค้นหาจนถึงวันที่สิ้นสุด
+            $query .= " AND a.date_created <= ?";
+            $params[] = $date_to;
         }
         
         $query .= " ORDER BY a.date_created DESC, a.id DESC";
@@ -143,7 +153,7 @@ class Album {
     }
 
     // นับจำนวนผลการค้นหา
-    public function countSearchResults($search_name = '', $search_date = '') {
+    public function countSearchResults($search_name = '', $date_from = '', $date_to = '') {
         $query = "SELECT COUNT(*) as total
                   FROM albums a
                   JOIN album_categories c ON a.category_id = c.id
@@ -159,10 +169,20 @@ class Album {
             $params[] = $search_term;
         }
         
-        // เพิ่มเงื่อนไขการค้นหาตามวันที่
-        if (!empty($search_date)) {
-            $query .= " AND a.date_created = ?";
-            $params[] = $search_date;
+        // เพิ่มเงื่อนไขการค้นหาตามช่วงวันที่
+        if (!empty($date_from) && !empty($date_to)) {
+            // ค้นหาในช่วงวันที่
+            $query .= " AND a.date_created BETWEEN ? AND ?";
+            $params[] = $date_from;
+            $params[] = $date_to;
+        } elseif (!empty($date_from)) {
+            // ค้นหาตั้งแต่วันที่เริ่มต้นเป็นต้นไป
+            $query .= " AND a.date_created >= ?";
+            $params[] = $date_from;
+        } elseif (!empty($date_to)) {
+            // ค้นหาจนถึงวันที่สิ้นสุด
+            $query .= " AND a.date_created <= ?";
+            $params[] = $date_to;
         }
         
         $stmt = $this->conn->prepare($query);
