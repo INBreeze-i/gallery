@@ -146,6 +146,7 @@ if ($has_search) {
                                name="date_from" 
                                value="<?php echo htmlspecialchars($date_from); ?>"
                                placeholder="วันที่เริ่มต้น"
+                               onchange="validateDateRangeSearch()"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
                     </div>
                     
@@ -159,6 +160,7 @@ if ($has_search) {
                                name="date_to" 
                                value="<?php echo htmlspecialchars($date_to); ?>"
                                placeholder="วันที่สิ้นสุด"
+                               onchange="validateDateRangeSearch()"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
                     </div>
                     
@@ -333,5 +335,24 @@ if ($has_search) {
             overflow: hidden;
         }
     </style>
+
+    <!-- Date Range Validation Script -->
+    <script>
+    function validateDateRangeSearch() {
+        const dateFrom = document.getElementById('date_from');
+        const dateTo = document.getElementById('date_to');
+        
+        if (dateFrom.value && dateTo.value) {
+            const fromDate = new Date(dateFrom.value);
+            const toDate = new Date(dateTo.value);
+            
+            if (fromDate > toDate) {
+                alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
+                dateTo.value = '';
+                dateTo.focus();
+            }
+        }
+    }
+    </script>
 </body>
 </html>

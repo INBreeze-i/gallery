@@ -30,6 +30,7 @@
                             <input type="date" 
                                    id="date_from" 
                                    name="date_from" 
+                                   onchange="validateDateRange()"
                                    class="w-full px-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200">
                         </div>
                         
@@ -41,6 +42,7 @@
                             <input type="date" 
                                    id="date_to" 
                                    name="date_to" 
+                                   onchange="validateDateRange()"
                                    class="w-full px-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200">
                         </div>
                     </div>
@@ -64,3 +66,21 @@
         </div>
     </div>
 </div>
+
+<script>
+function validateDateRange() {
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    
+    if (dateFrom.value && dateTo.value) {
+        const fromDate = new Date(dateFrom.value);
+        const toDate = new Date(dateTo.value);
+        
+        if (fromDate > toDate) {
+            alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
+            dateTo.value = '';
+            dateTo.focus();
+        }
+    }
+}
+</script>
