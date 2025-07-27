@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Category Filter System - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-active {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .category-item:hover {
+            background-color: #f9fafb;
+            transform: translateX(2px);
+            transition: all 0.2s ease;
+        }
+        .category-checkbox:checked + .ml-2 {
+            background-color: #eff6ff;
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+        }
+        #categoryList::-webkit-scrollbar {
+            width: 6px;
+        }
+        #categoryList::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        #categoryList::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Enhanced Category Filter System</h1>
+                        <p class="text-sm text-gray-600">Demo of Advanced Album Management Interface</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Demo Mode</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Enhanced Filters Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            <!-- Filter Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <!-- Filter Header -->
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">
+                                <i class="fas fa-filter mr-2"></i>ตัวกรอง
+                            </h3>
+                            <button id="toggleStats" class="text-white hover:text-gray-200 transition-colors">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search -->
+                    <div class="p-4 border-b">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-search mr-1 text-blue-600"></i>ค้นหา
+                        </label>
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อหรือรายละเอียด Album..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    
+                    <!-- Multi-Category Filter -->
+                    <div class="p-4 border-b">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="text-sm font-medium text-gray-700">
+                                <i class="fas fa-tags mr-1 text-blue-600"></i>หมวดหมู่
+                            </label>
+                            <div class="space-x-2">
+                                <button id="selectAllCategories" class="text-xs text-blue-600 hover:text-blue-800">เลือกทั้งหมด</button>
+                                <button id="clearAllCategories" class="text-xs text-gray-600 hover:text-gray-800">ล้าง</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Category Search -->
+                        <input type="text" id="categorySearch" placeholder="ค้นหาหมวดหมู่..."
+                               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-3 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        
+                        <!-- Category Checkboxes -->
+                        <div id="categoryList" class="space-y-2 max-h-48 overflow-y-auto">
+                            <label class="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer category-item">
+                                <input type="checkbox" value="1" class="category-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                                <div class="ml-2 flex items-center flex-1">
+                                    <div class="w-4 h-4 rounded mr-2 bg-blue-600"></div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-gray-900 category-name">กีฬา</div>
+                                        <div class="text-xs text-gray-500 category-description">กิจกรรมด้านกีฬาและการออกกำลังกาย</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer category-item">
+                                <input type="checkbox" value="2" class="category-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div class="ml-2 flex items-center flex-1">
+                                    <div class="w-4 h-4 rounded mr-2 bg-purple-600"></div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-gray-900 category-name">ศิลปะ</div>
+                                        <div class="text-xs text-gray-500 category-description">กิจกรรมด้านศิลปะและความคิดสร้างสรรค์</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer category-item">
+                                <input type="checkbox" value="3" class="category-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div class="ml-2 flex items-center flex-1">
+                                    <div class="w-4 h-4 rounded mr-2 bg-green-600"></div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-gray-900 category-name">วิทยาศาสตร์</div>
+                                        <div class="text-xs text-gray-500 category-description">กิจกรรมด้านวิทยาศาสตร์และเทคโนโลยี</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer category-item">
+                                <input type="checkbox" value="4" class="category-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <div class="ml-2 flex items-center flex-1">
+                                    <div class="w-4 h-4 rounded mr-2 bg-pink-600"></div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-gray-900 category-name">ดนตรี</div>
+                                        <div class="text-xs text-gray-500 category-description">กิจกรรมด้านดนตรีและการแสดง</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div class="p-4 border-b">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-toggle-on mr-1 text-blue-600"></i>สถานะ
+                        </label>
+                        <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <option value="">ทุกสถานะ</option>
+                            <option value="active">เผยแพร่</option>
+                            <option value="inactive">ไม่เผยแพร่</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Sort Options -->
+                    <div class="p-4 border-b">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-sort mr-1 text-blue-600"></i>เรียงลำดับ
+                        </label>
+                        <div class="space-y-2">
+                            <select id="sortField" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <option value="created_at" selected>วันที่สร้าง</option>
+                                <option value="title">ชื่อ Album</option>
+                                <option value="category_name">หมวดหมู่</option>
+                                <option value="view_count">จำนวนดู</option>
+                                <option value="status">สถานะ</option>
+                            </select>
+                            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+                                <button id="sortAsc" class="flex-1 px-3 py-2 text-sm bg-white hover:bg-gray-50 transition-colors text-gray-700">
+                                    <i class="fas fa-sort-amount-up mr-1"></i>น้อย-มาก
+                                </button>
+                                <button id="sortDesc" class="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 hover:bg-gray-50 transition-colors border-l">
+                                    <i class="fas fa-sort-amount-down mr-1"></i>มาก-น้อย
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Actions -->
+                    <div class="p-4">
+                        <div class="space-y-2">
+                            <button id="applyFilters" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                <i class="fas fa-search mr-2"></i>ใช้ตัวกรอง
+                            </button>
+                            <button id="clearFilters" class="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                                <i class="fas fa-times mr-2"></i>ล้างตัวกรอง
+                            </button>
+                            <div class="flex space-x-2">
+                                <button id="saveFilterState" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs">
+                                    <i class="fas fa-save mr-1"></i>บันทึก
+                                </button>
+                                <button id="loadFilterState" class="flex-1 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-xs">
+                                    <i class="fas fa-download mr-1"></i>โหลด
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Panel -->
+                <div id="statsPanel" class="mt-4">
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4">
+                            <h3 class="text-lg font-semibold">
+                                <i class="fas fa-chart-bar mr-2"></i>สถิติหมวดหมู่
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div class="flex items-center">
+                                        <div class="bg-blue-600 text-white p-2 rounded-lg">
+                                            <i class="fas fa-folder text-sm"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <div class="text-xs text-blue-600 font-medium">หมวดหมู่</div>
+                                            <div class="text-lg font-bold text-blue-800">6</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <div class="flex items-center">
+                                        <div class="bg-green-600 text-white p-2 rounded-lg">
+                                            <i class="fas fa-images text-sm"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <div class="text-xs text-green-600 font-medium">Albums</div>
+                                            <div class="text-lg font-bold text-green-800">24</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <div class="lg:col-span-3">
+                <!-- Filter Breadcrumbs -->
+                <div id="filterBreadcrumbs" class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                    <div class="flex items-center text-sm">
+                        <span class="text-gray-500 mr-2">ตัวกรองที่ใช้:</span>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">หมวดหมู่: กีฬา</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Summary -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center">
+                        <div class="text-gray-600">
+                            แสดง Albums 1-5 จากทั้งหมด 24 รายการ
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button id="exportResults" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm">
+                                <i class="fas fa-download mr-2"></i>ส่งออก CSV
+                            </button>
+                            <div class="text-sm text-gray-500">
+                                หน้า 1 จาก 5
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Albums Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-hover">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Album</th>
+                                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
+                                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-700">รูปภาพ</th>
+                                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-700">ดู</th>
+                                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-700">สถานะ</th>
+                                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-700">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                                                <i class="fas fa-image text-gray-400"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">การแข่งขันฟุตบอลประจำปี 2024</div>
+                                                <div class="text-sm text-gray-500">การแข่งขันฟุตบอลประจำปีระหว่างคณะต่างๆ</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="status-badge" style="background-color: #3b82f620; color: #3b82f6;">
+                                            <i class="fas fa-futbol mr-1"></i>กีฬา
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-sm font-medium text-gray-900">12</span>
+                                        <div class="text-xs text-gray-500">รูป</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-sm font-medium text-gray-900">156</span>
+                                        <div class="text-xs text-gray-500">ครั้ง</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="status-badge status-active">
+                                            <i class="fas fa-circle text-xs mr-1"></i>เผยแพร่
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-green-600 hover:text-green-800 p-1 rounded transition-colors">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-800 p-1 rounded transition-colors">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- More demo rows -->
+                                <tr>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                                                <i class="fas fa-image text-gray-400"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">การแข่งขันบาสเกตบอล</div>
+                                                <div class="text-sm text-gray-500">การแข่งขันบาสเกตบอลระดับมหาวิทยาลัย</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="status-badge" style="background-color: #3b82f620; color: #3b82f6;">
+                                            <i class="fas fa-futbol mr-1"></i>กีฬา
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-sm font-medium text-gray-900">8</span>
+                                        <div class="text-xs text-gray-500">รูป</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-sm font-medium text-gray-900">89</span>
+                                        <div class="text-xs text-gray-500">ครั้ง</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="status-badge status-active">
+                                            <i class="fas fa-circle text-xs mr-1"></i>เผยแพร่
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-green-600 hover:text-green-800 p-1 rounded transition-colors">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-800 p-1 rounded transition-colors">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo functionality
+        document.getElementById('toggleStats').addEventListener('click', function() {
+            const statsPanel = document.getElementById('statsPanel');
+            if (statsPanel.classList.contains('hidden')) {
+                statsPanel.classList.remove('hidden');
+            } else {
+                statsPanel.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('selectAllCategories').addEventListener('click', function() {
+            document.querySelectorAll('.category-checkbox').forEach(cb => cb.checked = true);
+        });
+
+        document.getElementById('clearAllCategories').addEventListener('click', function() {
+            document.querySelectorAll('.category-checkbox').forEach(cb => cb.checked = false);
+        });
+
+        document.getElementById('categorySearch').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            document.querySelectorAll('.category-item').forEach(item => {
+                const name = item.querySelector('.category-name').textContent.toLowerCase();
+                const description = item.querySelector('.category-description').textContent.toLowerCase();
+                item.style.display = (name.includes(query) || description.includes(query)) ? '' : 'none';
+            });
+        });
+
+        // Sort button toggle
+        document.getElementById('sortAsc').addEventListener('click', function() {
+            document.getElementById('sortDesc').classList.remove('bg-blue-50', 'text-blue-600');
+            this.classList.add('bg-blue-50', 'text-blue-600');
+        });
+
+        document.getElementById('sortDesc').addEventListener('click', function() {
+            document.getElementById('sortAsc').classList.remove('bg-blue-50', 'text-blue-600');
+            this.classList.add('bg-blue-50', 'text-blue-600');
+        });
+
+        // Demo notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transition-all duration-300`;
+            
+            const colors = {
+                'success': 'bg-green-500 text-white',
+                'error': 'bg-red-500 text-white',
+                'info': 'bg-blue-500 text-white'
+            };
+            
+            notification.className += ' ' + (colors[type] || colors.info);
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Demo actions
+        document.getElementById('applyFilters').addEventListener('click', () => {
+            showNotification('ตัวกรองถูกใช้งานแล้ว (Demo Mode)', 'success');
+        });
+
+        document.getElementById('saveFilterState').addEventListener('click', () => {
+            showNotification('บันทึกสถานะตัวกรองสำเร็จ (Demo Mode)', 'success');
+        });
+
+        document.getElementById('loadFilterState').addEventListener('click', () => {
+            showNotification('โหลดสถานะตัวกรองสำเร็จ (Demo Mode)', 'success');
+        });
+
+        document.getElementById('exportResults').addEventListener('click', () => {
+            showNotification('กำลังเตรียมไฟล์ส่งออก... (Demo Mode)', 'info');
+        });
+    </script>
+</body>
+</html>

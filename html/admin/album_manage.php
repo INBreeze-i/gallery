@@ -380,6 +380,14 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
                             <button id="clearFilters" class="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm">
                                 <i class="fas fa-times mr-2"></i>ล้างตัวกรอง
                             </button>
+                            <div class="flex space-x-2">
+                                <button id="saveFilterState" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs">
+                                    <i class="fas fa-save mr-1"></i>บันทึก
+                                </button>
+                                <button id="loadFilterState" class="flex-1 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-xs">
+                                    <i class="fas fa-download mr-1"></i>โหลด
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -423,6 +431,9 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php endif; ?>
                         </div>
                         <div class="flex items-center space-x-4">
+                            <button id="exportResults" class="hidden bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm">
+                                <i class="fas fa-download mr-2"></i>ส่งออก CSV
+                            </button>
                             <div id="loadingIndicator" class="hidden">
                                 <i class="fas fa-spinner fa-spin text-blue-600"></i>
                                 <span class="text-sm text-gray-600 ml-2">กำลังโหลด...</span>
@@ -795,6 +806,14 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
             
             document.getElementById('currentPage').textContent = data.current_page;
             document.getElementById('totalPages').textContent = data.total_pages;
+            
+            // แสดงปุ่มส่งออกถ้ามีผลลัพธ์
+            const exportBtn = document.getElementById('exportResults');
+            if (data.total_records > 0) {
+                exportBtn.classList.remove('hidden');
+            } else {
+                exportBtn.classList.add('hidden');
+            }
         }
 
         function updateBreadcrumbs() {
@@ -903,6 +922,129 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         }
 
+        // Filter State Management
+        function saveFilterState() {
+            fetch('ajax/filter_state.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'save',
+                    filters: currentFilters
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('บันทึกสถานะตัวกรองสำเร็จ', 'success');
+                } else {
+                    showNotification('เกิดข้อผิดพลาด: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Save filter state error:', error);
+                showNotification('เกิดข้อผิดพลาดในการบันทึก', 'error');
+            });
+        }
+
+        function loadFilterState() {
+            fetch('ajax/filter_state.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'load'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.filters) {
+                    // อัปเดตฟอร์ม
+                    document.getElementById('searchInput').value = data.filters.search || '';
+                    document.getElementById('statusFilter').value = data.filters.status || '';
+                    document.getElementById('sortField').value = data.filters.sort || 'created_at';
+                    
+                    // อัปเดต sort order
+                    if (data.filters.order === 'ASC') {
+                        document.getElementById('sortAsc').click();
+                    } else {
+                        document.getElementById('sortDesc').click();
+                    }
+                    
+                    // อัปเดต category checkboxes
+                    document.querySelectorAll('.category-checkbox').forEach(cb => {
+                        cb.checked = data.filters.categories && data.filters.categories.includes(parseInt(cb.value));
+                    });
+                    
+                    // อัปเดต currentFilters และใช้ตัวกรอง
+                    currentFilters = data.filters;
+                    applyFilters();
+                    
+                    showNotification('โหลดสถานะตัวกรองสำเร็จ', 'success');
+                } else {
+                    showNotification('ไม่มีสถานะตัวกรองที่บันทึกไว้', 'info');
+                }
+            })
+            .catch(error => {
+                console.error('Load filter state error:', error);
+                showNotification('เกิดข้อผิดพลาดในการโหลด', 'error');
+            });
+        }
+
+        function exportResults() {
+            const params = new URLSearchParams({
+                search: currentFilters.search,
+                categories: currentFilters.categories.join(','),
+                status: currentFilters.status,
+                sort: currentFilters.sort,
+                order: currentFilters.order
+            });
+            
+            showNotification('กำลังเตรียมไฟล์ส่งออก...', 'info');
+            window.open('ajax/export_albums.php?' + params.toString(), '_blank');
+        }
+
+        function showNotification(message, type = 'info') {
+            // สร้าง notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transition-all duration-300 transform translate-x-full`;
+            
+            const colors = {
+                'success': 'bg-green-500 text-white',
+                'error': 'bg-red-500 text-white',
+                'info': 'bg-blue-500 text-white',
+                'warning': 'bg-yellow-500 text-black'
+            };
+            
+            notification.className += ' ' + (colors[type] || colors.info);
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // แสดง notification
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // ซ่อน notification หลัง 5 วินาที
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 5000);
+        }
+
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
             // Category search
@@ -927,6 +1069,13 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
             // Filter controls
             document.getElementById('applyFilters').addEventListener('click', () => applyFilters());
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            
+            // Filter state management
+            document.getElementById('saveFilterState').addEventListener('click', saveFilterState);
+            document.getElementById('loadFilterState').addEventListener('click', loadFilterState);
+            
+            // Export functionality
+            document.getElementById('exportResults').addEventListener('click', exportResults);
 
             // Sort order buttons
             document.getElementById('sortAsc').addEventListener('click', function() {
