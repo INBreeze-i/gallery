@@ -8,18 +8,19 @@ $album = new Album($db);
 
 // รับค่าจากฟอร์มค้นหา
 $search_name = isset($_GET['search']) ? trim($_GET['search']) : '';
-$search_date = isset($_GET['date']) ? trim($_GET['date']) : '';
+$start_date = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
+$end_date = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
 
 // ตรวจสอบว่ามีการค้นหาหรือไม่
-$has_search = !empty($search_name) || !empty($search_date);
+$has_search = !empty($search_name) || !empty($start_date) || !empty($end_date);
 
 $search_results = [];
 $total_results = 0;
 
 if ($has_search) {
     // ทำการค้นหา
-    $search_stmt = $album->searchAlbums($search_name, $search_date);
-    $total_results = $album->countSearchResults($search_name, $search_date);
+    $search_stmt = $album->searchAlbums($search_name, $start_date, $end_date);
+    $total_results = $album->countSearchResults($search_name, $start_date, $end_date);
     
     while ($row = $search_stmt->fetch(PDO::FETCH_ASSOC)) {
         // ดึงรูปภาพตัวอย่าง 4 รูปแรก
@@ -88,9 +89,18 @@ if ($has_search) {
                                     <i class="fas fa-tag mr-1"></i>ชื่อ: "<?php echo htmlspecialchars($search_name); ?>"
                                 </span>
                             <?php endif; ?>
-                            <?php if (!empty($search_date)): ?>
+                            <?php if (!empty($start_date) || !empty($end_date)): ?>
                                 <span class="bg-white/20 px-3 py-1 rounded-full">
-                                    <i class="fas fa-calendar mr-1"></i>วันที่: <?php echo date('d/m/Y', strtotime($search_date)); ?>
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    <?php 
+                                    if (!empty($start_date) && !empty($end_date)) {
+                                        echo "ระหว่าง: " . date('d/m/Y', strtotime($start_date)) . " - " . date('d/m/Y', strtotime($end_date));
+                                    } elseif (!empty($start_date)) {
+                                        echo "ตั้งแต่: " . date('d/m/Y', strtotime($start_date));
+                                    } elseif (!empty($end_date)) {
+                                        echo "ถึง: " . date('d/m/Y', strtotime($end_date));
+                                    }
+                                    ?>
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -116,14 +126,23 @@ if ($has_search) {
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
                     </div>
                     
-                    <!-- ช่องค้นหาจากวันที่ -->
+                    <!-- ช่องค้นหาจากช่วงวันที่ -->
                     <div class="space-y-2">
-                        <label for="date" class="block text-sm font-medium text-gray-700">ค้นหาจากวันที่สร้าง</label>
-                        <input type="date" 
-                               id="date" 
-                               name="date" 
-                               value="<?php echo htmlspecialchars($search_date); ?>"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
+                        <label class="block text-sm font-medium text-gray-700">ค้นหาจากช่วงวันที่สร้าง</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="date" 
+                                   id="start_date" 
+                                   name="start_date" 
+                                   value="<?php echo htmlspecialchars($start_date); ?>"
+                                   placeholder="วันที่เริ่มต้น"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
+                            <input type="date" 
+                                   id="end_date" 
+                                   name="end_date" 
+                                   value="<?php echo htmlspecialchars($end_date); ?>"
+                                   placeholder="วันที่สิ้นสุด"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
+                        </div>
                     </div>
                     
                     <!-- ปุ่มค้นหา -->

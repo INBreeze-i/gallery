@@ -100,8 +100,8 @@ class Album {
         return $stmt;
     }
 
-    // ค้นหา Albums ตามชื่อและวันที่
-    public function searchAlbums($search_name = '', $search_date = '') {
+    // ค้นหา Albums ตามชื่อและช่วงวันที่
+    public function searchAlbums($search_name = '', $start_date = '', $end_date = '') {
         $query = "SELECT 
                     a.id as album_id,
                     a.title as album_title,
@@ -129,10 +129,17 @@ class Album {
             $params[] = $search_term;
         }
         
-        // เพิ่มเงื่อนไขการค้นหาตามวันที่
-        if (!empty($search_date)) {
-            $query .= " AND a.date_created = ?";
-            $params[] = $search_date;
+        // เพิ่มเงื่อนไขการค้นหาตามช่วงวันที่
+        if (!empty($start_date) && !empty($end_date)) {
+            $query .= " AND a.date_created BETWEEN ? AND ?";
+            $params[] = $start_date;
+            $params[] = $end_date;
+        } elseif (!empty($start_date)) {
+            $query .= " AND a.date_created >= ?";
+            $params[] = $start_date;
+        } elseif (!empty($end_date)) {
+            $query .= " AND a.date_created <= ?";
+            $params[] = $end_date;
         }
         
         $query .= " ORDER BY a.date_created DESC, a.id DESC";
@@ -143,7 +150,7 @@ class Album {
     }
 
     // นับจำนวนผลการค้นหา
-    public function countSearchResults($search_name = '', $search_date = '') {
+    public function countSearchResults($search_name = '', $start_date = '', $end_date = '') {
         $query = "SELECT COUNT(*) as total
                   FROM albums a
                   JOIN album_categories c ON a.category_id = c.id
@@ -159,10 +166,17 @@ class Album {
             $params[] = $search_term;
         }
         
-        // เพิ่มเงื่อนไขการค้นหาตามวันที่
-        if (!empty($search_date)) {
-            $query .= " AND a.date_created = ?";
-            $params[] = $search_date;
+        // เพิ่มเงื่อนไขการค้นหาตามช่วงวันที่
+        if (!empty($start_date) && !empty($end_date)) {
+            $query .= " AND a.date_created BETWEEN ? AND ?";
+            $params[] = $start_date;
+            $params[] = $end_date;
+        } elseif (!empty($start_date)) {
+            $query .= " AND a.date_created >= ?";
+            $params[] = $start_date;
+        } elseif (!empty($end_date)) {
+            $query .= " AND a.date_created <= ?";
+            $params[] = $end_date;
         }
         
         $stmt = $this->conn->prepare($query);

@@ -22,13 +22,21 @@
                                    class="w-full px-4 py-3 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200">
                         </div>
                         
-                        <!-- ช่องค้นหาจากวันที่ -->
+                        <!-- ช่องค้นหาจากช่วงวันที่ -->
                         <div class="space-y-2">
-                            <label for="date" class="block text-sm font-medium text-white/90">ค้นหาจากวันที่สร้าง</label>
-                            <input type="date" 
-                                   id="date" 
-                                   name="date" 
-                                   class="w-full px-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200">
+                            <label class="block text-sm font-medium text-white/90">ค้นหาจากช่วงวันที่สร้าง</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <input type="date" 
+                                       id="start_date" 
+                                       name="start_date" 
+                                       placeholder="วันที่เริ่มต้น"
+                                       class="w-full px-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200">
+                                <input type="date" 
+                                       id="end_date" 
+                                       name="end_date" 
+                                       placeholder="วันที่สิ้นสุด"
+                                       class="w-full px-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200">
+                            </div>
                         </div>
                     </div>
                     
@@ -45,7 +53,7 @@
                 <!-- หมายเหตุ -->
                 <p class="text-sm text-white/75 mt-4">
                     <i class="fas fa-info-circle mr-1"></i>
-                    สามารถค้นหาได้จากชื่อ Album หรือวันที่สร้าง หรือทั้งคู่
+                    สามารถค้นหาได้จากชื่อ Album หรือช่วงวันที่สร้าง หรือทั้งคู่
                 </p>
             </div>
         </div>
