@@ -7,8 +7,8 @@
             <p class="text-xl md:text-2xl mb-8 opacity-90">
                 แสดงกิจกรรมและผลงานล่าสุดของเรา
             </p>
-            <button class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                เริ่มต้นใช้งาน
+            <button id="searchModalBtn" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                <i class="fas fa-search mr-2"></i>ค้นหา Albums
             </button>
         </div>
     </div>
