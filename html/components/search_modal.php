@@ -27,6 +27,34 @@
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
             
+            <!-- ช่องเลือกหมวดหมู่ -->
+            <div class="mb-4">
+                <label for="categorySelect" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-tags mr-1"></i>หมวดหมู่
+                </label>
+                <select id="categorySelect" 
+                        name="category_id"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="0">-- ทุกหมวดหมู่ --</option>
+                    <?php
+                    // ดึงข้อมูลหมวดหมู่จากฐานข้อมูล
+                    include_once 'config/database.php';
+                    $database = new Database();
+                    $db = $database->getConnection();
+                    
+                    $category_query = "SELECT id, name, icon, color FROM album_categories ORDER BY name";
+                    $category_stmt = $db->prepare($category_query);
+                    $category_stmt->execute();
+                    
+                    while ($category = $category_stmt->fetch(PDO::FETCH_ASSOC)) {
+                        echo '<option value="' . htmlspecialchars($category['id']) . '">';
+                        echo htmlspecialchars($category['name']);
+                        echo '</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+            
             <!-- ช่องเลือกวันที่เริ่ม -->
             <div class="mb-4">
                 <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">
@@ -73,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModalBtn = document.getElementById('closeModalBtn');
     const clearFormBtn = document.getElementById('clearFormBtn');
     const searchForm = document.getElementById('searchForm');
-    
+
     // เปิด Modal
     if (searchModalBtn) {
         searchModalBtn.addEventListener('click', function() {

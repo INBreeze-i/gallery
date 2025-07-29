@@ -149,7 +149,7 @@ class Album {
         return $stmt;
     }
 
-    // ดึงส统หมวดหมู่พร้อมสถิติ
+    // ดึงสถิติหมวดหมู่พร้อมสถิติ
     public function getCategoryStatistics() {
         $query = "SELECT 
                     c.id,
@@ -303,6 +303,62 @@ class Album {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $category_id, PDO::PARAM_INT);
         $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    // ค้นหา Albums ด้วยชื่อ หมวดหมู่ และ/หรือช่วงวันที่
+    public function searchAlbumsWithCategory($query = '', $category_id = 0, $start_date = '', $end_date = '') {
+        $sql = "SELECT 
+                    a.*,
+                    c.name as category_name,
+                    c.color,
+                    c.icon,
+                    (SELECT COUNT(*) FROM album_images WHERE album_id = a.id) as image_count
+                FROM albums a
+                JOIN album_categories c ON a.category_id = c.id
+                WHERE a.status = 'active'";
+        
+        $params = [];
+        $param_count = 0;
+        
+        // เพิ่มเงื่อนไขค้นหาตามชื่อ
+        if (!empty($query)) {
+            $sql .= " AND (a.title LIKE ? OR a.description LIKE ?)";
+            $params[] = '%' . $query . '%';
+            $params[] = '%' . $query . '%';
+            $param_count += 2;
+        }
+        
+        // เพิ่มเงื่อนไขค้นหาตามหมวดหมู่
+        if ($category_id > 0) {
+            $sql .= " AND a.category_id = ?";
+            $params[] = $category_id;
+            $param_count++;
+        }
+        
+        // เพิ่มเงื่อนไขค้นหาตามวันที่
+        if (!empty($start_date)) {
+            $sql .= " AND a.date_created >= ?";
+            $params[] = $start_date;
+            $param_count++;
+        }
+        
+        if (!empty($end_date)) {
+            $sql .= " AND a.date_created <= ?";
+            $params[] = $end_date;
+            $param_count++;
+        }
+        
+        $sql .= " ORDER BY a.date_created DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        
+        // bind parameters
+        for ($i = 0; $i < $param_count; $i++) {
+            $stmt->bindParam($i + 1, $params[$i]);
+        }
+        
         $stmt->execute();
         return $stmt;
     }
