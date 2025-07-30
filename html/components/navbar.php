@@ -2,18 +2,16 @@
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center py-4">
             <!-- Logo -->
-            <div class="text-white text-xl font-bold">
-                โปรเจค PHP
-            </div>
+                <a href="index.php" class="text-white hover:text-blue-200 transition-colors h1">KPRU PHOTOS</a>
             
             <!-- Navigation Links -->
             <div class="hidden md:flex space-x-6">
-                <a href="../index.php" class="text-white hover:text-blue-200 transition-colors">หน้าหลัก</a>
-                <a href="pages/about.php" class="text-white hover:text-blue-200 transition-colors">เกี่ยวกับเรา</a>
-                <a href="pages/services.php" class="text-white hover:text-blue-200 transition-colors">บริการ</a>
-                <a href="pages/portfolio.php" class="text-white hover:text-blue-200 transition-colors">ผลงาน</a>
-                <a href="pages/blog.php" class="text-white hover:text-blue-200 transition-colors">บล็อก</a>
-                <a href="pages/contact.php" class="text-white hover:text-blue-200 transition-colors">ติดต่อเรา</a>
+                <a href="category.php?id=1" class="text-white hover:text-blue-200 transition-colors">ผลิตบัณฑิต</a>
+                <a href="category.php?id=2" class="text-white hover:text-blue-200 transition-colors">การบริการวิชาการ</a>
+                <a href="category.php?id=3" class="text-white hover:text-blue-200 transition-colors">ผลิตและพัฒนาครู</a>
+                <a href="category.php?id=4" class="text-white hover:text-blue-200 transition-colors">การวิจัย</a>
+                <a href="category.php?id=5" class="text-white hover:text-blue-200 transition-colors">ศิลปะและวัฒนธรรม</a>
+                <a href="category.php?id=6" class="text-white hover:text-blue-200 transition-colors">การบริหารจัดการ</a>
             </div>
             
             <!-- Mobile Menu Button -->
