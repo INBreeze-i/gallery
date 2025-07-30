@@ -2,3 +2,12 @@
 * {
     font-family: 'Kanit', sans-serif;
 }
+
+/* Banner Background with Dark Overlay */
+.banner-background {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../../banner.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
