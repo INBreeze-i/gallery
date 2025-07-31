@@ -223,5 +223,8 @@ while ($img = $images_stmt->fetch(PDO::FETCH_ASSOC)) {
             overflow: hidden;
         }
     </style>
+
+    <!-- Footer -->
+    <?php include 'components/footer.php'; ?>
 </body>
 </html>

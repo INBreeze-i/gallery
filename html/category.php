@@ -123,5 +123,8 @@ $category_color = !empty($albums) ? $albums[0]['album_data']['color'] : 'bg-gray
             overflow: hidden;
         }
     </style>
+
+    <!-- Footer -->
+    <?php include 'components/footer.php'; ?>
 </body>
 </html>
