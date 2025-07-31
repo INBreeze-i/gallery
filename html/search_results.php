@@ -247,5 +247,8 @@ if ($category_id > 0) {
             });
         }
     </script>
+
+    <!-- Footer -->
+    <?php include 'components/footer.php'; ?>
 </body>
 </html>

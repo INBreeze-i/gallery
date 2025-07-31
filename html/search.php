@@ -125,7 +125,8 @@ $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         <?php endif; ?>
     </div>
-<!-- 
-    <?php include 'components/footer.php'; ?> -->
+
+    <!-- Footer -->
+    <?php include 'components/footer.php'; ?>
 </body>
 </html>

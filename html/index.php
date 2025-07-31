@@ -171,5 +171,8 @@ while ($row = $albums->fetch(PDO::FETCH_ASSOC)) {
             overflow: hidden;
         }
     </style>
+
+    <!-- Footer -->
+    <?php include 'components/footer.php'; ?>
 </body>
 </html>
