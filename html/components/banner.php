@@ -1,4 +1,4 @@
-<div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+<div class="banner-background text-white">
     <div class="container mx-auto px-4 py-16">
         <div class="text-center">
             <button id="searchModalBtn" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
