@@ -32,13 +32,13 @@ class ImageHandler {
         $original_extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
         $timestamp = date('YmdHis');
         $random = substr(md5(uniqid(rand(), true)), 0, 8);
-        
+
         // ใช้ .webp ถ้ารองรับ WebP และไฟล์เป็นรูปภาพที่แปลงได้
         $supported_for_webp = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         if ($this->has_webp && in_array($original_extension, $supported_for_webp)) {
             return "img_{$timestamp}_{$random}.webp";
         }
-        
+
         // ถ้าไม่รองรับ WebP หรือไฟล์ไม่สามารถแปลงได้ ใช้นามสกุลเดิม
         return "img_{$timestamp}_{$random}.{$original_extension}";
     }

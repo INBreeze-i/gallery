@@ -270,13 +270,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                        <i class="fas fa-edit mr-2 text-blue-600"></i>ข้อมูล Album  <?php echo CSRFProtection::getTokenField('upload_images'); ?>
+                        <i class="fas fa-edit mr-2 text-blue-600"></i>ข้อมูล Album
                     </h2>
-                    
-                    <form method="POST" class="space-y-6">
-                        <input type="hidden" name="action" value="update_album">
-                        <?php echo CSRFProtection::getTokenField('update_album'); ?>
-                        
+                    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                            <input type="hidden" name="action" value="upload_images">
+                             <?php echo CSRFProtection::getTokenField('upload_images'); ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -914,7 +912,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 // Add album_id and CSRF token
                 formData.append('album_id', <?php echo $album_id; ?>);
-                formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+               formData.append('csrf_token', document.querySelector('form[enctype="multipart/form-data"] input[name="csrf_token"]').value);
                 
                 // Add all files
                 Array.from(fileInput.files).forEach(file => {

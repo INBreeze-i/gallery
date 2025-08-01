@@ -725,6 +725,7 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_ASSOC);
                         alert('ลบ Album สำเร็จ!');
                         applyFilters(); // โหลดข้อมูลใหม่
                         closeDeleteModal();
+                        window.location.reload(true);
                     } else {
                         alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถลบ Album ได้'));
                         closeDeleteModal();

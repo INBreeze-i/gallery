@@ -131,13 +131,11 @@ try {
                 'failed_files' => count($failed_files)
             ]
         ]);
-        
     } catch (Exception $e) {
         // Rollback transaction
         $db->rollBack();
         throw $e;
     }
-    
 } catch (Exception $e) {
     error_log("Album deletion error: " . $e->getMessage());
     echo json_encode([
