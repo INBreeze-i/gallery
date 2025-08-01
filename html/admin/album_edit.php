@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                        <i class="fas fa-edit mr-2 text-blue-600"></i>ข้อมูล Album
+                        <i class="fas fa-edit mr-2 text-blue-600"></i>ข้อมูล Album  <?php echo CSRFProtection::getTokenField('upload_images'); ?>
                     </h2>
                     
                     <form method="POST" class="space-y-6">
