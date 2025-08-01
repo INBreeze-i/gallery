@@ -2238,3 +2238,31 @@ video {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
+
+/* Kanit-SemiBold Font Face */
+@font-face {
+    font-family: 'Kanit-SemiBold';
+    src: url('../font/Kanit-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+/* Kanit Font Configuration for Thai Language Support */
+* {
+    font-family: 'Kanit', sans-serif;
+}
+
+/* Utility class for Kanit-SemiBold font */
+.font-kanit-semibold {
+    font-family: 'Kanit-SemiBold', 'Kanit', sans-serif;
+    font-weight: 600;
+}
+
+/* Banner Background with Dark Overlay using Tailwind-style approach */
+.banner-background {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../../banner.webp');
+}
