@@ -47,27 +47,65 @@ class ImageHandler {
     public function validateImage($file) {
         $errors = [];
         
-        // เอาข้อจำกัดขนาดไฟล์ออก - รองรับไฟล์ขนาดใหญ่และแปลงเป็น WebP อัตโนมัติ
+        // ตรวจสอบว่ามีไฟล์หรือไม่
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            $errors[] = "ไม่พบไฟล์ที่อัปโหลด: {$file['name']}";
+            return $errors;
+        }
+        
+        // ตรวจสอบขนาดไฟล์
+        $max_size = $this->parseSize(ini_get('upload_max_filesize'));
+        if ($file['size'] > $max_size) {
+            $errors[] = "ไฟล์ {$file['name']} มีขนาด " . $this->formatFileSize($file['size']) . 
+                       " ใหญ่เกินกำหนด (ขนาดสูงสุด: " . ini_get('upload_max_filesize') . ")";
+        }
         
         // ตรวจสอบประเภทไฟล์
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array(strtolower($file['type']), $allowed_types)) {
-            $errors[] = "รองรับเฉพาะไฟล์ JPEG, PNG, GIF, WebP เท่านั้น (ไฟล์ปัจจุบัน: {$file['type']})";
+        $file_type = strtolower($file['type']);
+        
+        if (!in_array($file_type, $allowed_types)) {
+            $errors[] = "ประเภทไฟล์ {$file['name']} ไม่ถูกต้อง (ประเภท: {$file['type']}) - รองรับเฉพาะ JPEG, PNG, GIF, WebP";
+        }
+        
+        // ตรวจสอบนามสกุลไฟล์
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        
+        if (!in_array($extension, $allowed_extensions)) {
+            $errors[] = "นามสกุลไฟล์ {$file['name']} ไม่ถูกต้อง (.{$extension}) - รองรับเฉพาะ: " . implode(', ', $allowed_extensions);
         }
         
         // ตรวจสอบว่าเป็นรูปภาพจริง (ใช้ getimagesize แทน GD)
         if ($file['tmp_name'] && function_exists('getimagesize')) {
             $image_info = @getimagesize($file['tmp_name']);
             if (!$image_info) {
-                $errors[] = "ไฟล์ที่อัปโหลดไม่ใช่รูปภาพที่ถูกต้อง";
+                $errors[] = "ไฟล์ {$file['name']} ไม่ใช่รูปภาพที่ถูกต้อง หรือไฟล์เสียหาย";
+            } else {
+                // ตรวจสอบขนาดภาพ
+                $width = $image_info[0];
+                $height = $image_info[1];
+                
+                if ($width < 10 || $height < 10) {
+                    $errors[] = "รูปภาพ {$file['name']} มีขนาดเล็กเกินไป ({$width}x{$height} พิกเซล)";
+                }
+                
+                if ($width > 10000 || $height > 10000) {
+                    $errors[] = "รูปภาพ {$file['name']} มีขนาดใหญ่เกินไป ({$width}x{$height} พิกเซล) ขนาดสูงสุด: 10000x10000 พิกเซล";
+                }
+                
+                // ตรวจสอบความสอดคล้องระหว่าง MIME type และข้อมูลภาพ
+                $detected_type = $image_info['mime'];
+                if ($detected_type !== $file_type && !($file_type === 'image/jpg' && $detected_type === 'image/jpeg')) {
+                    $errors[] = "ประเภทไฟล์ {$file['name']} ไม่ตรงกับเนื้อหา (ประกาศ: {$file_type}, จริง: {$detected_type})";
+                }
             }
         }
         
-        // ตรวจสอบนามสกุลไฟล์
-        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($extension, $allowed_extensions)) {
-            $errors[] = "นามสกุลไฟล์ไม่ถูกต้อง รองรับเฉพาะ: " . implode(', ', $allowed_extensions);
+        // ตรวจสอบความปลอดภัยไฟล์
+        $file_content = file_get_contents($file['tmp_name'], false, null, 0, 1024);
+        if ($file_content && preg_match('/<\?php|<script|<html/i', $file_content)) {
+            $errors[] = "ไฟล์ {$file['name']} มีเนื้อหาที่อาจเป็นอันตราย";
         }
         
         return $errors;
@@ -410,6 +448,103 @@ class ImageHandler {
         }
         
         return $formats;
+    }
+    
+    // แปลงรหัสข้อผิดพลาดการอัปโหลดเป็นข้อความภาษาไทย
+    public function getUploadErrorMessage($error_code) {
+        switch ($error_code) {
+            case UPLOAD_ERR_OK:
+                return 'อัปโหลดสำเร็จ';
+            case UPLOAD_ERR_INI_SIZE:
+                return 'ไฟล์มีขนาดใหญ่เกินที่กำหนดในระบบ (' . ini_get('upload_max_filesize') . ')';
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'ไฟล์มีขนาดใหญ่เกินที่กำหนดในฟอร์ม';
+            case UPLOAD_ERR_PARTIAL:
+                return 'ไฟล์ถูกอัปโหลดไม่สมบูรณ์';
+            case UPLOAD_ERR_NO_FILE:
+                return 'ไม่มีไฟล์ถูกอัปโหลด';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'ไม่พบโฟลเดอร์ชั่วคราวสำหรับอัปโหลด';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'ไม่สามารถเขียนไฟล์ลงดิสก์ได้';
+            case UPLOAD_ERR_EXTENSION:
+                return 'การอัปโหลดถูกหยุดโดย extension ของ PHP';
+            default:
+                return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ (รหัส: ' . $error_code . ')';
+        }
+    }
+    
+    // ตรวจสอบการตั้งค่า PHP สำหรับการอัปโหลด
+    public function validatePHPUploadSettings() {
+        $issues = [];
+        $warnings = [];
+        
+        // ตรวจสอบการเปิดใช้การอัปโหลด
+        if (!ini_get('file_uploads')) {
+            $issues[] = 'การอัปโหลดไฟล์ถูกปิดใช้งานในระบบ (file_uploads = Off)';
+        }
+        
+        // ตรวจสอบขนาดไฟล์สูงสุด
+        $upload_max = $this->parseSize(ini_get('upload_max_filesize'));
+        $post_max = $this->parseSize(ini_get('post_max_size'));
+        
+        if ($upload_max === 0) {
+            $issues[] = 'ไม่สามารถอัปโหลดไฟล์ได้ (upload_max_filesize = 0)';
+        } elseif ($upload_max < 1048576) { // < 1MB
+            $warnings[] = 'ขนาดไฟล์สูงสุดน้อยมาก (' . $this->formatFileSize($upload_max) . ')';
+        }
+        
+        if ($post_max < $upload_max) {
+            $warnings[] = 'post_max_size (' . ini_get('post_max_size') . ') น้อยกว่า upload_max_filesize (' . ini_get('upload_max_filesize') . ')';
+        }
+        
+        // ตรวจสอบจำนวนไฟล์สูงสุด
+        $max_files = (int)ini_get('max_file_uploads');
+        if ($max_files < 10) {
+            $warnings[] = 'จำนวนไฟล์ที่อัปโหลดได้พร้อมกันน้อย (' . $max_files . ' ไฟล์)';
+        }
+        
+        // ตรวจสอบเวลาสูงสุด
+        $max_execution = (int)ini_get('max_execution_time');
+        if ($max_execution > 0 && $max_execution < 60) {
+            $warnings[] = 'เวลาประมวลผลสูงสุดอาจไม่เพียงพอสำหรับไฟล์ขนาดใหญ่ (' . $max_execution . ' วินาที)';
+        }
+        
+        // ตรวจสอบสิทธิ์โฟลเดอร์
+        if (!is_dir($this->upload_dir)) {
+            $issues[] = 'โฟลเดอร์อัปโหลดไม่มีอยู่: ' . $this->upload_dir;
+        } elseif (!is_writable($this->upload_dir)) {
+            $issues[] = 'ไม่สามารถเขียนไฟล์ในโฟลเดอร์อัปโหลดได้: ' . $this->upload_dir;
+        }
+        
+        return [
+            'issues' => $issues,
+            'warnings' => $warnings,
+            'settings' => [
+                'file_uploads' => ini_get('file_uploads') ? 'On' : 'Off',
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+                'max_file_uploads' => ini_get('max_file_uploads'),
+                'max_execution_time' => ini_get('max_execution_time'),
+                'upload_dir' => $this->upload_dir,
+                'upload_dir_writable' => is_writable($this->upload_dir) ? 'Yes' : 'No'
+            ]
+        ];
+    }
+    
+    // แปลงขนาดไฟล์จาก string เป็น bytes
+    private function parseSize($size) {
+        $size = trim($size);
+        $last = strtolower($size[strlen($size) - 1]);
+        $size = (int)$size;
+        
+        switch($last) {
+            case 'g': $size *= 1024;
+            case 'm': $size *= 1024;
+            case 'k': $size *= 1024;
+        }
+        
+        return $size;
     }
 }
 ?>

@@ -840,12 +840,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             hideUploadProgress();
             
             if (success) {
-                // Show success message and reload page
-                alert('อัปโหลดรูปภาพสำเร็จ!');
+                // Show success message with better formatting
+                const lines = message.split('\n');
+                let alertMsg = lines[0]; // Main message
+                
+                if (lines.length > 1) {
+                    // Show warnings separately if any
+                    const warnings = lines.slice(1).join('\n');
+                    setTimeout(() => {
+                        if (confirm(alertMsg + '\n\n' + warnings + '\n\nต้องการดูรายละเอียดเพิ่มเติมใช่หรือไม่?')) {
+                            console.log('Upload completed with warnings:', warnings);
+                        }
+                    }, 100);
+                } else {
+                    alert(alertMsg);
+                }
+                
                 location.reload();
             } else {
-                // Show error message
-                alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + message);
+                // Enhanced error display
+                const errorDialog = document.createElement('div');
+                errorDialog.style.cssText = `
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    background: white; padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    max-width: 500px; max-height: 70vh; overflow-y: auto; z-index: 10000;
+                    font-family: 'Kanit', sans-serif; border: 3px solid #ef4444;
+                `;
+                
+                errorDialog.innerHTML = `
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <i class="fas fa-exclamation-circle" style="color: #ef4444; font-size: 24px; margin-right: 10px;"></i>
+                        <h3 style="margin: 0; color: #ef4444;">เกิดข้อผิดพลาดในการอัปโหลด</h3>
+                    </div>
+                    <div style="white-space: pre-wrap; line-height: 1.5; margin-bottom: 20px; color: #374151;">
+                        ${message}
+                    </div>
+                    <div style="text-align: right;">
+                        <button onclick="this.parentElement.parentElement.remove(); document.getElementById('uploadOverlay').remove();" 
+                                style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: 'Kanit', sans-serif;">
+                            ปิด
+                        </button>
+                    </div>
+                `;
+                
+                // Add overlay
+                const overlay = document.createElement('div');
+                overlay.id = 'uploadOverlay';
+                overlay.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: rgba(0,0,0,0.5); z-index: 9999;
+                `;
+                overlay.onclick = () => {
+                    errorDialog.remove();
+                    overlay.remove();
+                };
+                
+                document.body.appendChild(overlay);
+                document.body.appendChild(errorDialog);
             }
         }
 
@@ -901,29 +952,96 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             
                             if (response.success) {
                                 updateProgressBar(100, null, totalFiles, totalFiles, 0, 0, 0);
+                                
+                                // Show detailed success message
+                                let successMsg = response.message;
+                                if (response.warnings && response.warnings.length > 0) {
+                                    successMsg += '\n\nคำเตือน:\n' + response.warnings.join('\n');
+                                }
+                                
                                 setTimeout(() => {
-                                    handleUploadComplete(true, response.message);
+                                    handleUploadComplete(true, successMsg);
                                 }, 500);
                             } else {
-                                handleUploadComplete(false, response.message);
+                                // Enhanced error handling with detailed information
+                                let errorMsg = response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                                
+                                if (response.errors && response.errors.length > 1) {
+                                    errorMsg += '\n\nรายละเอียดข้อผิดพลาด:\n' + response.errors.slice(0, 5).join('\n');
+                                    if (response.errors.length > 5) {
+                                        errorMsg += '\n... และอีก ' + (response.errors.length - 5) + ' ข้อผิดพลาด';
+                                    }
+                                }
+                                
+                                // Add debug information if available
+                                if (response.debug_info && console && console.error) {
+                                    console.error('Upload Error Debug Info:', response.debug_info);
+                                    
+                                    if (response.error_code) {
+                                        console.error('Error Code:', response.error_code);
+                                    }
+                                }
+                                
+                                handleUploadComplete(false, errorMsg);
                             }
                         } catch (error) {
-                            handleUploadComplete(false, 'Error processing server response');
+                            console.error('JSON Parse Error:', error);
+                            console.error('Server Response:', uploadXHR.responseText);
+                            handleUploadComplete(false, 'ไม่สามารถประมวลผลการตอบกลับจากเซิร์ฟเวอร์ได้\nกรุณาตรวจสอบ Console สำหรับข้อมูลเพิ่มเติม');
                         }
                     } else {
-                        handleUploadComplete(false, `Server error: ${uploadXHR.status}`);
+                        let errorMsg = `เซิร์ฟเวอร์ตอบกลับด้วยสถานะ: ${uploadXHR.status}`;
+                        
+                        if (uploadXHR.status === 400) {
+                            errorMsg += '\n\nข้อผิดพลาดที่อาจเกิดขึ้น:\n';
+                            errorMsg += '• ไฟล์มีขนาดใหญ่เกินกำหนด\n';
+                            errorMsg += '• ประเภทไฟล์ไม่ถูกต้อง\n';
+                            errorMsg += '• ข้อมูลฟอร์มไม่ครบถ้วน\n';
+                            errorMsg += '• ปัญหาการยืนยันตัวตน';
+                        } else if (uploadXHR.status === 403) {
+                            errorMsg += '\nไม่มีสิทธิ์ในการดำเนินการ กรุณาเข้าสู่ระบบใหม่';
+                        } else if (uploadXHR.status === 404) {
+                            errorMsg += '\nไม่พบไฟล์หรือหน้าที่ร้องขอ';
+                        } else if (uploadXHR.status === 500) {
+                            errorMsg += '\nเกิดข้อผิดพลาดภายในเซิร์ฟเวอร์';
+                        }
+                        
+                        // Try to parse error response even for non-200 status
+                        try {
+                            const errorResponse = JSON.parse(uploadXHR.responseText);
+                            if (errorResponse.message) {
+                                errorMsg = errorResponse.message;
+                                
+                                if (errorResponse.debug_info && console && console.error) {
+                                    console.error('Server Error Debug Info:', errorResponse.debug_info);
+                                }
+                            }
+                        } catch (parseError) {
+                            console.error('Could not parse error response:', uploadXHR.responseText);
+                        }
+                        
+                        handleUploadComplete(false, errorMsg);
                     }
                 });
                 
                 // Handle upload errors
                 uploadXHR.addEventListener('error', function() {
-                    handleUploadComplete(false, 'Network error occurred');
+                    console.error('Network error during upload');
+                    let errorMsg = 'เกิดข้อผิดพลาดเครือข่าย\n\nสาเหตุที่อาจเกิดขึ้น:\n';
+                    errorMsg += '• การเชื่อมต่ออินเทอร์เน็ตไม่เสถียร\n';
+                    errorMsg += '• เซิร์ฟเวอร์ไม่ตอบสนอง\n';
+                    errorMsg += '• ไฟล์มีขนาดใหญ่เกินไป\n';
+                    errorMsg += '• การตั้งค่าเครือข่ายมีปัญหา\n\n';
+                    errorMsg += 'แนะนำ: ตรวจสอบการเชื่อมต่อและลองใหม่อีกครั้ง';
+                    
+                    handleUploadComplete(false, errorMsg);
                 });
                 
                 // Handle upload abort
                 uploadXHR.addEventListener('abort', function() {
+                    console.log('Upload cancelled by user');
                     hideUploadProgress();
-                    alert('การอัปโหลดถูกยกเลิก');
+                    alert('การอัปโหลดถูกยกเลิกแล้ว');
                 });
                 
                 // Send the request to AJAX endpoint
