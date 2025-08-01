@@ -1,13 +1,21 @@
+/* Import Tailwind CSS */
+@import url('../dist/output.css');
+
+/* Kanit-SemiBold Font Face */
+@font-face {
+    font-family: 'Kanit-SemiBold';
+    src: url('../../font/Kanit-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
 /* Kanit Font Configuration for Thai Language Support */
 * {
     font-family: 'Kanit', sans-serif;
 }
 
-/* Banner Background with Dark Overlay */
+/* Banner Background with Dark Overlay using Tailwind-style approach */
 .banner-background {
+    @apply relative bg-cover bg-center bg-no-repeat;
     background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../../banner.webp');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
 }
